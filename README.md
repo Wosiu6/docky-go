@@ -1,4 +1,4 @@
-# docky-go:= cli_container_visualisation
+docky-go:= cli_container_visualisation
 ==========
 
 [![License][license-shield]][license-url] [![GitHub][github-shield]][github-url]
