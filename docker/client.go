@@ -87,6 +87,22 @@ func (c *DockerClient) ContainerStats(ctx context.Context, id string, dest inter
 	return dec.Decode(dest)
 }
 
+func (c *DockerClient) ContainerInspect(ctx context.Context, id string, dest interface{}) error {
+	url := fmt.Sprintf("%s/containers/%s/json", c.url, id)
+	req, _ := http.NewRequestWithContext(ctx, "GET", url, nil)
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode >= 400 {
+		b, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("inspect error: %s", strings.TrimSpace(string(b)))
+	}
+	dec := json.NewDecoder(resp.Body)
+	return dec.Decode(dest)
+}
+
 func (c *DockerClient) GetHttpClient() *http.Client {
 	return c.http
 }
