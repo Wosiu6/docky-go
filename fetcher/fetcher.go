@@ -98,6 +98,9 @@ func (f *Fetcher) FetchAll(ctx context.Context) ([]ContainerInfo, error) {
 		id, _ := r["Id"].(string)
 		namesIface, _ := r["Names"].([]interface{})
 		image, _ := r["Image"].(string)
+		state, _ := r["State"].(string)   // Extract State from ListContainers
+		status, _ := r["Status"].(string) // Extract Status description
+
 		names := make([]string, 0, len(namesIface))
 		for _, ni := range namesIface {
 			if s, ok := ni.(string); ok {
@@ -106,7 +109,7 @@ func (f *Fetcher) FetchAll(ctx context.Context) ([]ContainerInfo, error) {
 		}
 
 		wg.Add(1)
-		go func(id string, names []string, image string, rawContainer map[string]interface{}) {
+		go func(id string, names []string, image string, state string, status string, rawContainer map[string]interface{}) {
 			defer wg.Done()
 			sem <- struct{}{}
 			defer func() { <-sem }()
@@ -124,7 +127,6 @@ func (f *Fetcher) FetchAll(ctx context.Context) ([]ContainerInfo, error) {
 				MemoryStats struct {
 					Usage uint64 `json:"usage"`
 				} `json:"memory_stats"`
-				Status string `json:"status"`
 			}
 
 			if err := f.client.ContainerStats(ctx, id, &v); err != nil {
@@ -132,9 +134,10 @@ func (f *Fetcher) FetchAll(ctx context.Context) ([]ContainerInfo, error) {
 					info: ContainerInfo{
 						Type: TypeGeneric,
 						BaseContainerInfo: BaseContainerInfo{
-							ID:    id,
-							Names: names,
-							Image: image,
+							ID:     id,
+							Names:  names,
+							Image:  image,
+							Status: state, // Use the state from ListContainers
 						},
 					},
 					err: nil,
@@ -172,7 +175,7 @@ func (f *Fetcher) FetchAll(ctx context.Context) ([]ContainerInfo, error) {
 				Image:      image,
 				CPUPercent: cpu,
 				Mem:        v.MemoryStats.Usage / 1024 / 1024, // Convert to MB
-				Status:     v.Status,
+				Status:     state,                             // Use State from ListContainers
 			}
 
 			// Detect container type and fetch specific info
@@ -200,7 +203,7 @@ func (f *Fetcher) FetchAll(ctx context.Context) ([]ContainerInfo, error) {
 			}
 
 			ch <- result{info: info, err: nil}
-		}(id, names, image, r)
+		}(id, names, image, state, status, r)
 	}
 
 	wg.Wait()

@@ -54,6 +54,13 @@ func (m *UiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 var (
+	// Container status colors
+	runningColor    = lipgloss.Color("#00FF00")
+	stoppedColor    = lipgloss.Color("#FF0000")
+	pausedColor     = lipgloss.Color("#FFA500")
+	restartingColor = lipgloss.Color("#FFFF00")
+	createdColor    = lipgloss.Color("#00BFFF")
+
 	// Container type colors
 	postgresColor  = lipgloss.Color("#336791")
 	minecraftColor = lipgloss.Color("#62B47A")
@@ -83,6 +90,10 @@ var (
 	statsStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#FFA500")).
 			Bold(true)
+
+	statusStyle = lipgloss.NewStyle().
+			Bold(true).
+			Padding(0, 1)
 
 	errorStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#FF0000")).
@@ -201,7 +212,38 @@ func (m *UiModel) renderContainer(container fetcher.ContainerInfo, width, height
 		Foreground(borderColor).
 		Bold(true).
 		Render(fmt.Sprintf("● %s", typeLabel))
-	content.WriteString(typeBadge + "\n\n")
+	content.WriteString(typeBadge + "\n")
+
+	// Status with color
+	statusColor := stoppedColor
+	statusIcon := "⭘"
+	statusText := strings.ToUpper(container.Status)
+
+	switch strings.ToLower(container.Status) {
+	case "running":
+		statusColor = runningColor
+		statusIcon = "●"
+	case "paused":
+		statusColor = pausedColor
+		statusIcon = "❚❚"
+	case "restarting":
+		statusColor = restartingColor
+		statusIcon = "↻"
+	case "exited":
+		statusColor = stoppedColor
+		statusIcon = "■"
+	case "created":
+		statusColor = createdColor
+		statusIcon = "○"
+	case "dead":
+		statusColor = stoppedColor
+		statusIcon = "✗"
+	}
+
+	status := statusStyle.
+		Foreground(statusColor).
+		Render(fmt.Sprintf("%s %s", statusIcon, statusText))
+	content.WriteString(status + "\n\n")
 
 	// Stats (CPU and Memory)
 	content.WriteString(labelStyle.Render("CPU:    ") +
