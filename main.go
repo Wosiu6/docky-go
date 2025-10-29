@@ -40,8 +40,8 @@ func main() {
 	}
 
 	fetcher := fetcher.New(dockerClient)
-	uiModel := ui.New(fetcher)
-	program := tea.NewProgram(uiModel)
+	ui := ui.New(fetcher)
+	program := tea.NewProgram(ui)
 	if _, err := program.Run(); err != nil {
 		fmt.Fprintln(os.Stderr, "TUI error:", err)
 		os.Exit(1)
