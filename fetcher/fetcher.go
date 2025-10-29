@@ -27,6 +27,7 @@ type PostgreSqlContainerInfo struct {
 	User           string
 	SSLMode        string
 	MaxConnections int
+	PGData         string
 }
 
 type MinecraftContainerInfo struct {
@@ -98,8 +99,8 @@ func (f *Fetcher) FetchAll(ctx context.Context) ([]ContainerInfo, error) {
 		id, _ := r["Id"].(string)
 		namesIface, _ := r["Names"].([]interface{})
 		image, _ := r["Image"].(string)
-		state, _ := r["State"].(string)   // Extract State from ListContainers
-		status, _ := r["Status"].(string) // Extract Status description
+		state, _ := r["State"].(string)
+		status, _ := r["Status"].(string)
 
 		names := make([]string, 0, len(namesIface))
 		for _, ni := range namesIface {
@@ -114,7 +115,6 @@ func (f *Fetcher) FetchAll(ctx context.Context) ([]ContainerInfo, error) {
 			sem <- struct{}{}
 			defer func() { <-sem }()
 
-			// Fetch stats
 			var v struct {
 				CPUStats struct {
 					CPUUsage struct {
@@ -137,7 +137,7 @@ func (f *Fetcher) FetchAll(ctx context.Context) ([]ContainerInfo, error) {
 							ID:     id,
 							Names:  names,
 							Image:  image,
-							Status: state, // Use the state from ListContainers
+							Status: state,
 						},
 					},
 					err: nil,
@@ -174,11 +174,10 @@ func (f *Fetcher) FetchAll(ctx context.Context) ([]ContainerInfo, error) {
 				Names:      names,
 				Image:      image,
 				CPUPercent: cpu,
-				Mem:        v.MemoryStats.Usage / 1024 / 1024, // Convert to MB
-				Status:     state,                             // Use State from ListContainers
+				Mem:        v.MemoryStats.Usage / 1024 / 1024,
+				Status:     state,
 			}
 
-			// Detect container type and fetch specific info
 			containerType, specificInfo := f.detectContainerType(ctx, id, image, rawContainer, base)
 
 			info := ContainerInfo{
@@ -186,7 +185,6 @@ func (f *Fetcher) FetchAll(ctx context.Context) ([]ContainerInfo, error) {
 				BaseContainerInfo: base,
 			}
 
-			// Assign type-specific info
 			switch containerType {
 			case TypePostgreSQL:
 				if pg, ok := specificInfo.(*PostgreSqlContainerInfo); ok {
@@ -221,21 +219,17 @@ func (f *Fetcher) FetchAll(ctx context.Context) ([]ContainerInfo, error) {
 	return out, nil
 }
 
-// detectContainerType identifies the container type based on image name and env vars
 func (f *Fetcher) detectContainerType(ctx context.Context, id, image string, raw map[string]interface{}, base BaseContainerInfo) (ContainerType, interface{}) {
 	imageLower := strings.ToLower(image)
 
-	// Check for PostgreSQL
 	if strings.Contains(imageLower, "postgres") {
 		return TypePostgreSQL, f.fetchPostgreSqlInfo(ctx, id, raw, base)
 	}
 
-	// Check for Minecraft
 	if strings.Contains(imageLower, "minecraft") || strings.Contains(imageLower, "itzg/minecraft") {
 		return TypeMinecraft, f.fetchMinecraftInfo(ctx, id, raw, base)
 	}
 
-	// Check for Portainer
 	if strings.Contains(imageLower, "portainer") {
 		return TypePortainer, f.fetchPortainerInfo(ctx, id, raw, base)
 	}
@@ -243,13 +237,11 @@ func (f *Fetcher) detectContainerType(ctx context.Context, id, image string, raw
 	return TypeGeneric, nil
 }
 
-// fetchPostgreSqlInfo extracts PostgreSQL-specific information
 func (f *Fetcher) fetchPostgreSqlInfo(ctx context.Context, id string, raw map[string]interface{}, base BaseContainerInfo) *PostgreSqlContainerInfo {
 	info := &PostgreSqlContainerInfo{
 		BaseContainerInfo: base,
 	}
 
-	// Inspect container for environment variables and ports
 	var inspect struct {
 		Config struct {
 			Env []string `json:"Env"`
@@ -261,8 +253,7 @@ func (f *Fetcher) fetchPostgreSqlInfo(ctx context.Context, id string, raw map[st
 		} `json:"NetworkSettings"`
 	}
 
-	if err := f.client.ContainerStats(ctx, id, &inspect); err == nil {
-		// Extract environment variables
+	if err := f.client.ContainerInspect(ctx, id, &inspect); err == nil {
 		for _, env := range inspect.Config.Env {
 			parts := strings.SplitN(env, "=", 2)
 			if len(parts) != 2 {
@@ -277,16 +268,17 @@ func (f *Fetcher) fetchPostgreSqlInfo(ctx context.Context, id string, raw map[st
 				info.User = val
 			case "POSTGRES_SSL_MODE":
 				info.SSLMode = val
+			case "PGDATA":
+				info.PGData = val
 			case "POSTGRES_MAX_CONNECTIONS":
-				// Parse int from string if needed
-				info.MaxConnections = 100 // default, would need parsing
+				var maxConn int
+				fmt.Sscanf(val, "%d", &maxConn)
+				info.MaxConnections = maxConn
 			}
 		}
 
-		// Extract port
 		if ports, ok := inspect.NetworkSettings.Ports["5432/tcp"]; ok && len(ports) > 0 {
 			if ports[0].HostPort != "" {
-				// Parse port string to int
 				var port int
 				fmt.Sscanf(ports[0].HostPort, "%d", &port)
 				info.Port = port
@@ -297,7 +289,6 @@ func (f *Fetcher) fetchPostgreSqlInfo(ctx context.Context, id string, raw map[st
 	return info
 }
 
-// fetchMinecraftInfo extracts Minecraft-specific information
 func (f *Fetcher) fetchMinecraftInfo(ctx context.Context, id string, raw map[string]interface{}, base BaseContainerInfo) *MinecraftContainerInfo {
 	info := &MinecraftContainerInfo{
 		BaseContainerInfo: base,
@@ -314,7 +305,7 @@ func (f *Fetcher) fetchMinecraftInfo(ctx context.Context, id string, raw map[str
 		} `json:"NetworkSettings"`
 	}
 
-	if err := f.client.ContainerStats(ctx, id, &inspect); err == nil {
+	if err := f.client.ContainerInspect(ctx, id, &inspect); err == nil {
 		for _, env := range inspect.Config.Env {
 			parts := strings.SplitN(env, "=", 2)
 			if len(parts) != 2 {
@@ -336,7 +327,6 @@ func (f *Fetcher) fetchMinecraftInfo(ctx context.Context, id string, raw map[str
 			}
 		}
 
-		// Extract port
 		if ports, ok := inspect.NetworkSettings.Ports["25565/tcp"]; ok && len(ports) > 0 {
 			if ports[0].HostPort != "" {
 				var port int
@@ -349,11 +339,10 @@ func (f *Fetcher) fetchMinecraftInfo(ctx context.Context, id string, raw map[str
 	return info
 }
 
-// fetchPortainerInfo extracts Portainer-specific information
 func (f *Fetcher) fetchPortainerInfo(ctx context.Context, id string, raw map[string]interface{}, base BaseContainerInfo) *PortainerContainerInfo {
 	info := &PortainerContainerInfo{
 		BaseContainerInfo: base,
-		Edition:           "Community", // default
+		Edition:           "Community",
 	}
 
 	var inspect struct {
@@ -367,7 +356,7 @@ func (f *Fetcher) fetchPortainerInfo(ctx context.Context, id string, raw map[str
 		} `json:"NetworkSettings"`
 	}
 
-	if err := f.client.ContainerStats(ctx, id, &inspect); err == nil {
+	if err := f.client.ContainerInspect(ctx, id, &inspect); err == nil {
 		for _, env := range inspect.Config.Env {
 			parts := strings.SplitN(env, "=", 2)
 			if len(parts) != 2 {
@@ -381,12 +370,10 @@ func (f *Fetcher) fetchPortainerInfo(ctx context.Context, id string, raw map[str
 			}
 		}
 
-		// Check if Business Edition
 		if strings.Contains(strings.ToLower(base.Image), "portainer-ee") {
 			info.Edition = "Business"
 		}
 
-		// Extract port (9000 or 9443)
 		for portKey, ports := range inspect.NetworkSettings.Ports {
 			if (strings.HasPrefix(portKey, "9000") || strings.HasPrefix(portKey, "9443")) && len(ports) > 0 {
 				if ports[0].HostPort != "" {

@@ -312,6 +312,9 @@ func (m *UiModel) renderPostgreSqlInfo(pg *fetcher.PostgreSqlContainerInfo, widt
 	if pg.MaxConnections > 0 {
 		s.WriteString(labelStyle.Render("Max Conn: ") + valueStyle.Render(fmt.Sprintf("%d", pg.MaxConnections)) + "\n")
 	}
+	if pg.PGData != "" {
+		s.WriteString(labelStyle.Render("Volume:     ") + valueStyle.Render(pg.PGData) + "\n")
+	}
 
 	return s.String()
 }
