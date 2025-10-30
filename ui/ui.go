@@ -13,33 +13,49 @@ import (
 )
 
 type UiModel struct {
-	fetcher *fetcher.Fetcher
-	lastErr error
-	items   []fetcher.ContainerInfo
+	fetcher  *fetcher.Fetcher
+	lastErr  error
+	items    []fetcher.ContainerInfo
+	loading  bool
+	termSize tea.WindowSizeMsg
 }
 
 func New(fetcher *fetcher.Fetcher) *UiModel { return &UiModel{fetcher: fetcher} }
 
-func (m *UiModel) Init() tea.Cmd { return tickCmd() }
+func (m *UiModel) Init() tea.Cmd {
+	return tea.Batch(tea.ClearScreen, tickCmd())
+}
 
 func tickCmd() tea.Cmd { return tea.Tick(time.Second*2, func(t time.Time) tea.Msg { return t }) }
 
 func (m *UiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg.(type) {
+	switch msg := msg.(type) {
+
+	case tea.WindowSizeMsg:
+		m.termSize = msg
+		return m, nil
+
 	case time.Time:
+		// ---- start loading -------------------------------------------------
+		m.loading = true
+		var cmds []tea.Cmd
+		cmds = append(cmds, tea.ClearScreen)
+
+		// ---- fetch containers -----------------------------------------------
 		ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
 		defer cancel()
 		items, err := m.fetcher.FetchAll(ctx)
+
 		if err != nil {
 			m.lastErr = err
+			m.items = nil
 		} else {
-			// Sort containers by name to maintain stable order
+			// sort … (unchanged)
 			sort.Slice(items, func(i, j int) bool {
-				nameI := "unnamed"
+				nameI, nameJ := "unnamed", "unnamed"
 				if len(items[i].Names) > 0 {
 					nameI = items[i].Names[0]
 				}
-				nameJ := "unnamed"
 				if len(items[j].Names) > 0 {
 					nameJ = items[j].Names[0]
 				}
@@ -48,7 +64,11 @@ func (m *UiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.items = items
 			m.lastErr = nil
 		}
-		return m, tickCmd()
+
+		// ---- finished loading ------------------------------------------------
+		m.loading = false
+		cmds = append(cmds, tickCmd())
+		return m, tea.Batch(cmds...)
 	}
 	return m, nil
 }
@@ -113,7 +133,8 @@ func (m *UiModel) View() string {
 	}
 
 	if len(m.items) == 0 {
-		return emptyStyle.Render("🐳 No containers found. Waiting for containers...")
+		renderString := centeredLogo(m.termSize.Width) + "\n\n" + "🐳 No containers found. Waiting for containers..."
+		return emptyStyle.Render(renderString)
 	}
 
 	// Get terminal dimensions (approximate, can be improved with tea.WindowSizeMsg)
@@ -360,4 +381,25 @@ func (m *UiModel) renderPortainerInfo(pt *fetcher.PortainerContainerInfo, width 
 	}
 
 	return s.String()
+}
+
+var dockyLogo = []string{
+	"    .___             __                                   ",
+	"  __| _/____   ____ |  | _____.__.           ____   ____  ",
+	" / __ |/  _ \\_/ ___\\|  |/ <   |  |  ______  / ___\\ /  _ \\ ",
+	"/ /_/ (  <_> )  \\___|    < \\___  | /_____/ / /_/  >  <_> )",
+	"\\____ |\\____/ \\___  >__|_ \\/ ____|         \\___  / \\____/ ",
+	"     \\/           \\/     \\/\\/             /_____/          ",
+}
+
+func centeredLogo(width int) string {
+	var lines []string
+	for _, l := range dockyLogo {
+		pad := 0
+		lines = append(lines, strings.Repeat(" ", pad)+l)
+	}
+	return lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#13BEF9")). // Portainer-blue – change if you like
+		Bold(true).
+		Render(strings.Join(lines, "\n"))
 }
