@@ -100,7 +100,7 @@ Want to add your own? Just implement a strategy and a detail renderer—no need 
 
 ## Contribution
 
-Currently, contributions are limited while the project stabilizes, but suggestions and feedback are welcome!
+Feel free to throw a PR if you're sure you know what you're doing but likely message me first to ensure we are on the same page.
 
 ---
 
