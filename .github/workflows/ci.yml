@@ -6,22 +6,37 @@ on:
     branches: [ develop, main ]
 jobs:
   test:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22'
-      - name: Run tests with coverage
+          go-version: '1.25'
+      - name: Run tests
+        run: go test ./...
+      - name: Run coverage (ubuntu only)
+        if: matrix.os == 'ubuntu-latest'
         run: go test -coverprofile=coverage.out ./...
-      - name: Show coverage summary
+      - name: Show coverage summary (ubuntu only)
+        if: matrix.os == 'ubuntu-latest'
         run: go tool cover -func=coverage.out | grep total || true
-      - name: Enforce fetcher coverage threshold
+      - name: Enforce fetcher coverage threshold (ubuntu only)
+        if: matrix.os == 'ubuntu-latest'
         run: |
-          go tool cover -func=coverage.out | grep github.com/wosiu6/docky-go/internal/fetcher | awk '{print $3}' | sed 's/%//' | awk '{ if ($1 < 80.0) { printf "Fetcher coverage %s%% below threshold\n", $1; exit 1 } else { printf "Fetcher coverage %s%% OK\n", $1 } }'
-      - name: Upload coverage artifact
+          go test -coverprofile=fetcher.out ./internal/fetcher
+          LINE=$(go tool cover -func=fetcher.out | grep total)
+          if [ -z "$LINE" ]; then echo "Fetcher total line not found"; exit 2; fi
+          PCT=$(echo "$LINE" | awk '{print $3}' | tr -d '%')
+          awk -v pct="$PCT" 'BEGIN { if (pct+0 < 80.0) { printf "Fetcher coverage %.1f%% below threshold\n", pct; exit 1 } else { printf "Fetcher coverage %.1f%% OK\n", pct } }'
+          # Append fetcher.out coverage to overall coverage artifact
+          cat fetcher.out >> coverage.out || true
+      - name: Upload coverage artifact (ubuntu only)
+        if: matrix.os == 'ubuntu-latest'
         uses: actions/upload-artifact@v4
         with:
           name: coverage

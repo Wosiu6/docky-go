@@ -5,12 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
-	"runtime"
 	"strings"
 	"time"
-	"github.com/Microsoft/go-winio"
 )
 
 type DockerClient interface {
@@ -35,27 +32,14 @@ type clientOptions struct {
 }
 
 func WithTimeout(d time.Duration) Option { return func(o *clientOptions) { o.timeout = d } }
-func WithBaseURL(u string) Option { return func(o *clientOptions) { o.baseURL = u } }
-
-func buildTransport() *http.Transport {
-	if runtime.GOOS == "windows" {
-		pipePath := `\\.\\pipe\\docker_engine`
-		dial := func(ctx context.Context, network, addr string) (net.Conn, error) {
-			return winio.DialPipeContext(ctx, pipePath)
-		}
-		return &http.Transport{DialContext: dial}
-	}
-	socketPath := "/var/run/docker.sock"
-	dial := func(ctx context.Context, network, addr string) (net.Conn, error) {
-		return net.Dial("unix", socketPath)
-	}
-	return &http.Transport{DialContext: dial}
-}
+func WithBaseURL(u string) Option        { return func(o *clientOptions) { o.baseURL = u } }
 
 func NewClient() (DockerClient, error) { return NewClientWithOptions() }
 func NewClientWithOptions(opts ...Option) (DockerClient, error) {
 	cfg := clientOptions{timeout: 5 * time.Second, baseURL: "http://docker"}
-	for _, opt := range opts { opt(&cfg) }
+	for _, opt := range opts {
+		opt(&cfg)
+	}
 	transport := buildTransport()
 	return &dockerClientImpl{http: &http.Client{Transport: transport, Timeout: cfg.timeout}, url: cfg.baseURL}, nil
 }
@@ -66,13 +50,19 @@ type HTTPError struct {
 	Body   string
 }
 
-func (e *HTTPError) Error() string { return fmt.Sprintf("docker %s failed: status=%d body=%s", e.Op, e.Status, e.Body) }
+func (e *HTTPError) Error() string {
+	return fmt.Sprintf("docker %s failed: status=%d body=%s", e.Op, e.Status, e.Body)
+}
 
 func (c *dockerClientImpl) Ping(ctx context.Context) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.url+"/_ping", nil)
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 	resp, err := c.http.Do(req)
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 	defer resp.Body.Close()
 	if resp.StatusCode >= 400 {
 		b, _ := io.ReadAll(resp.Body)
@@ -83,9 +73,13 @@ func (c *dockerClientImpl) Ping(ctx context.Context) error {
 
 func (c *dockerClientImpl) ListContainers(ctx context.Context) ([]map[string]interface{}, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.url+"/containers/json?all=1", nil)
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 	resp, err := c.http.Do(req)
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 	defer resp.Body.Close()
 	if resp.StatusCode >= 400 {
 		b, _ := io.ReadAll(resp.Body)
@@ -101,9 +95,13 @@ func (c *dockerClientImpl) ListContainers(ctx context.Context) ([]map[string]int
 func (c *dockerClientImpl) ContainerStats(ctx context.Context, id string, dest interface{}) error {
 	url := fmt.Sprintf("%s/containers/%s/stats?stream=false", c.url, id)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 	resp, err := c.http.Do(req)
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 	defer resp.Body.Close()
 	if resp.StatusCode >= 400 {
 		b, _ := io.ReadAll(resp.Body)
@@ -115,9 +113,13 @@ func (c *dockerClientImpl) ContainerStats(ctx context.Context, id string, dest i
 func (c *dockerClientImpl) ContainerInspect(ctx context.Context, id string, dest interface{}) error {
 	url := fmt.Sprintf("%s/containers/%s/json", c.url, id)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 	resp, err := c.http.Do(req)
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 	defer resp.Body.Close()
 	if resp.StatusCode >= 400 {
 		b, _ := io.ReadAll(resp.Body)
@@ -127,4 +129,4 @@ func (c *dockerClientImpl) ContainerInspect(ctx context.Context, id string, dest
 }
 
 func (c *dockerClientImpl) GetHttpClient() *http.Client { return c.http }
-func (c *dockerClientImpl) GetUrl() string { return c.url }
+func (c *dockerClientImpl) GetUrl() string              { return c.url }
