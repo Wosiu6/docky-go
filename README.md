@@ -5,8 +5,21 @@ docky-go:= cli_container_visualisation
 
 The goal of this application is to eventually display your container stats in a fancy looking cli visualisation scenario, for now it just displays your container stats in line.
 
+---
+
 ## Status
 This repo is very much a work in progress and a way for me to learn Golang.
+
+---
+
+## Currently supported containers
+I currently support any container docker spits out but I have a few special cases, I will keep adding more. 
+Here is the full list:
+- PostgreSQL
+- Minecraft
+- Portainer
+
+---
 
 ## Wanna see it in action?
 Mind you, this is probably going to change a lot but here is what I have so far:
@@ -20,6 +33,16 @@ Mind you, this is probably going to change a lot but here is what I have so far:
   <summary>2 containers, postgres</summary>
   <img width="1112" height="626" alt="image" src="https://github.com/user-attachments/assets/9295b2c4-1300-4b54-9de7-2a9011cae377" />
 </details>
+
+---
+
+## TODO
+
+- [ ] Refactor. Split out into files to make it more maintainable and readable.
+- [ ] Add support for more specific containers
+- [ ] Ensure connection over a socket proxy is possible.
+
+---
 
 ## Contribution
 It is unlikely I will accept any contribution right now because this is a project I want to get to a state I am happy with myself for now.
