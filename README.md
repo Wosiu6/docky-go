@@ -22,33 +22,33 @@
 
 <details>
   <summary>List of supported containers</summary>
-    - PostgreSQL  
-    - Minecraft  
-    - Portainer  
-    - Traefik  
-    - Immich  
-    - OwnCloud  
-    - Nginx  
-    - Redis  
-    - MySQL  
-    - MongoDB  
-    - Grafana  
-    - Prometheus  
-    - Nextcloud  
-    - Minio  
-    - MariaDB  
-    - RabbitMQ  
-    - Elasticsearch  
-    - Kibana  
-    - Jenkins  
-    - WordPress  
-    - Vaultwarden  
-    - Mosquitto  
-    - Plex  
-    - Jellyfin  
-    - Home Assistant  
-    - Sonarr  
-    - Radarr
+  - PostgreSQL<br />
+  - Minecraft<br />
+  - Portainer<br />
+  - Traefik<br />
+  - Immich<br />
+  - OwnCloud<br />
+  - Nginx<br />
+  - Redis<br />
+  - MySQL<br />
+  - MongoDB<br />
+  - Grafana<br />
+  - Prometheus<br />
+  - Nextcloud<br />
+  - Minio<br />
+  - MariaDB<br />
+  - RabbitMQ<br />
+  - Elasticsearch<br />
+  - Kibana<br />
+  - Jenkins<br />
+  - WordPress<br />
+  - Vaultwarden<br />
+  - Mosquitto<br />
+  - Plex<br />
+  - Jellyfin<br />
+  - Home Assistant<br />
+  - Sonarr<br />
+  - Radarr
 </details>
 
 Want to add your own? Just implement a strategy and a detail renderer—no need to touch the core!
