@@ -7,9 +7,7 @@ import (
 	"runtime"
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/wosiu6/docky-go/internal/docker"
-	"github.com/wosiu6/docky-go/internal/domain"
 	"github.com/wosiu6/docky-go/internal/fetcher"
 	"github.com/wosiu6/docky-go/internal/log"
 	"github.com/wosiu6/docky-go/internal/orchestrator"
@@ -23,6 +21,7 @@ func main() {
 	dockerClient, err := docker.NewClient()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "failed to create docker client:", err)
+		logger.Error("failed to create docker client", "error", err)
 		os.Exit(1)
 	}
 
@@ -31,63 +30,27 @@ func main() {
 	if err := dockerClient.Ping(pingCtx); err != nil {
 		if runtime.GOOS == "windows" {
 			fmt.Fprintln(os.Stderr, "Cannot reach Docker. On Windows ensure Docker Desktop is running and named pipe \\ \\ . \\ pipe \\ docker_engine is available.")
+			logger.Error("cannot reach docker on windows", "error", err)
 		} else {
-			fmt.Fprintln(os.Stderr, "Cannot reach Docker. Ensure the Docker daemon is running and /var/run/docker.sock is accessible.")
+			fmt.Fprintln(os.Stderr, "Cannot reach Docker. Ensure the Docker daemon is running and /var/run/docker.sock is accessible. Ensure you have permission to access the Docker socket/are a part of the docker group.")
+			logger.Error("cannot reach docker on unix", "error", err)
 		}
 		os.Exit(1)
 	}
 
 	dockerService := docker.NewService(dockerClient)
-	f := fetcher.NewWithService(dockerService, dockerClient)
-	adapter := fetcher.NewServiceAdapter(f)
+	containerFetcher := fetcher.NewWithService(dockerService, dockerClient)
+	serviceAdapter := fetcher.NewServiceAdapter(containerFetcher)
 
-	uiModel := ui.New(f)
-	app := &uiAdapter{model: uiModel}
+	uiModel := ui.New(containerFetcher)
+	uiAdapter := ui.NewAdapter(uiModel)
 
-	orch := orchestrator.New(adapter, app, logger, 1*time.Second)
+	orchestrator := orchestrator.New(serviceAdapter, uiAdapter, logger, time.Second)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	if err := orch.Start(ctx); err != nil && err != context.Canceled {
+	if err := orchestrator.Start(ctx); err != nil && err != context.Canceled {
 		fmt.Fprintln(os.Stderr, "application error:", err)
+		logger.Error("application error", "error", err)
 		os.Exit(1)
-	}
-}
-
-type uiAdapter struct {
-	model   *ui.UiModel
-	program *tea.Program
-}
-
-func (u *uiAdapter) SetData(containers []domain.Container) {
-	legacy := make([]fetcher.ContainerInfo, 0, len(containers))
-	for _, c := range containers {
-		legacy = append(legacy, fetcher.ContainerInfo{
-			Type: c.Type,
-			BaseContainerInfo: fetcher.BaseContainerInfo{
-				ID:         c.ID,
-				Names:      c.Names,
-				Image:      c.Image,
-				CPUPercent: c.CPUPercent,
-				Mem:        c.MemoryMB,
-				Status:     c.Status,
-			},
-			Specific: c.Details,
-		})
-	}
-	u.model.SetItems(legacy)
-	if u.program != nil {
-		u.program.Send(ui.RefreshMsg{})
-	}
-}
-
-func (u *uiAdapter) Run() error {
-	u.program = tea.NewProgram(u.model)
-	_, err := u.program.Run()
-	return err
-}
-
-func (u *uiAdapter) NotifyRefresh() {
-	if u.program != nil {
-		u.program.Send(ui.RefreshMsg{})
 	}
 }
