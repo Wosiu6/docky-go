@@ -5,13 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
-	"runtime"
 	"strings"
 	"time"
-
-	"github.com/Microsoft/go-winio"
 )
 
 type DockerClient interface {
@@ -37,35 +33,6 @@ type clientOptions struct {
 
 func WithTimeout(d time.Duration) Option { return func(o *clientOptions) { o.timeout = d } }
 func WithBaseURL(u string) Option        { return func(o *clientOptions) { o.baseURL = u } }
-
-func buildTransport() *http.Transport {
-	if runtime.GOOS == "windows" {
-		pipePath := `\\.\\pipe\\docker_engine`
-		dial := func(ctx context.Context, network, addr string) (net.Conn, error) {
-			ch := make(chan struct {
-				c   net.Conn
-				err error
-			}, 1)
-			go func() {
-				c, err := winio.DialPipe(pipePath, nil)
-				ch <- struct {
-					c   net.Conn
-					err error
-				}{c, err}
-			}()
-			select {
-			case <-ctx.Done():
-				return nil, ctx.Err()
-			case res := <-ch:
-				return res.c, res.err
-			}
-		}
-		return &http.Transport{DialContext: dial}
-	}
-	socketPath := "/var/run/docker.sock"
-	dial := func(ctx context.Context, network, addr string) (net.Conn, error) { return net.Dial("unix", socketPath) }
-	return &http.Transport{DialContext: dial}
-}
 
 func NewClient() (DockerClient, error) { return NewClientWithOptions() }
 func NewClientWithOptions(opts ...Option) (DockerClient, error) {
