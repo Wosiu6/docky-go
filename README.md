@@ -92,7 +92,7 @@ Want to add your own? Just implement a strategy and a detail renderer—no need 
 
 ## Getting Started
 
-1. **Install Go** (>=1.20)
+1. **Install Go** (>=1.25)
 2. Clone this repo
 3. Run: `go run main.go`
 
