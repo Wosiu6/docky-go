@@ -1,0 +1,28 @@
+name: CI
+on:
+  push:
+    branches: [ develop, main ]
+  pull_request:
+    branches: [ develop, main ]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+      - name: Run tests with coverage
+        run: go test -coverprofile=coverage.out ./...
+      - name: Show coverage summary
+        run: go tool cover -func=coverage.out | grep total || true
+      - name: Enforce fetcher coverage threshold
+        run: |
+          go tool cover -func=coverage.out | grep github.com/wosiu6/docky-go/internal/fetcher | awk '{print $3}' | sed 's/%//' | awk '{ if ($1 < 80.0) { printf "Fetcher coverage %s%% below threshold\n", $1; exit 1 } else { printf "Fetcher coverage %s%% OK\n", $1 } }'
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage.out
