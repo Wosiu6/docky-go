@@ -68,12 +68,14 @@ Want to add your own? Just implement a strategy and a detail renderer—no need 
 
 <details>
   <summary>Loading</summary>
-  <img width="1113" height="630" alt="image" src="https://github.com/user-attachments/assets/492b1973-0ff5-4d93-80ab-1f4780b1dbaa" />
+  <img width="1112" height="629" alt="image" src="https://github.com/user-attachments/assets/36a951c1-964d-44f5-bd38-14e78f3c26b8" />
+
 </details>
 
 <details>
-  <summary>2 containers, postgres</summary>
-  <img width="1112" height="626" alt="image" src="https://github.com/user-attachments/assets/9295b2c4-1300-4b54-9de7-2a9011cae377" />
+  <summary>3 containers, postgres, nginx, owncloud</summary>
+  <img width="1112" height="623" alt="image" src="https://github.com/user-attachments/assets/7c48e732-b332-403a-8b32-9676cde9981a" />
+
 </details>
 
 ---
