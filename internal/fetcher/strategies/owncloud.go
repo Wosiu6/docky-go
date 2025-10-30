@@ -62,12 +62,6 @@ func (o *OwnCloudContainerInfo) DetailFields() map[string]string {
 	if o.Version != "" {
 		m["Version"] = o.Version
 	}
-	if o.AdminUser != "" {
-		m["Admin User"] = o.AdminUser
-	}
-	if o.AdminPass != "" {
-		m["Admin Pass"] = o.AdminPass
-	}
 	if o.DBHost != "" {
 		m["DB Host"] = o.DBHost
 	}
