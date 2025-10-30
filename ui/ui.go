@@ -13,33 +13,52 @@ import (
 )
 
 type UiModel struct {
-	fetcher *fetcher.Fetcher
-	lastErr error
-	items   []fetcher.ContainerInfo
+	fetcher  *fetcher.Fetcher
+	lastErr  error
+	items    []fetcher.ContainerInfo
+	loading  bool
+	termSize tea.WindowSizeMsg
 }
 
 func New(fetcher *fetcher.Fetcher) *UiModel { return &UiModel{fetcher: fetcher} }
 
-func (m *UiModel) Init() tea.Cmd { return tickCmd() }
+func (m *UiModel) Init() tea.Cmd {
+	return tea.Batch(tea.ClearScreen, tickCmd())
+}
 
 func tickCmd() tea.Cmd { return tea.Tick(time.Second*2, func(t time.Time) tea.Msg { return t }) }
 
 func (m *UiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg.(type) {
+	switch msg := msg.(type) {
+
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "ctrl+c", "q":
+			return m, tea.Quit
+		}
+
+	case tea.WindowSizeMsg:
+		m.termSize = msg
+		return m, nil
+
 	case time.Time:
+		m.loading = true
+		var cmds []tea.Cmd
+		cmds = append(cmds, tea.ClearScreen)
+
 		ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
 		defer cancel()
 		items, err := m.fetcher.FetchAll(ctx)
+
 		if err != nil {
 			m.lastErr = err
+			m.items = nil
 		} else {
-			// Sort containers by name to maintain stable order
 			sort.Slice(items, func(i, j int) bool {
-				nameI := "unnamed"
+				nameI, nameJ := "unnamed", "unnamed"
 				if len(items[i].Names) > 0 {
 					nameI = items[i].Names[0]
 				}
-				nameJ := "unnamed"
 				if len(items[j].Names) > 0 {
 					nameJ = items[j].Names[0]
 				}
@@ -48,26 +67,26 @@ func (m *UiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.items = items
 			m.lastErr = nil
 		}
-		return m, tickCmd()
+
+		m.loading = false
+		cmds = append(cmds, tickCmd())
+		return m, tea.Batch(cmds...)
 	}
 	return m, nil
 }
 
 var (
-	// Container status colors
 	runningColor    = lipgloss.Color("#00FF00")
 	stoppedColor    = lipgloss.Color("#FF0000")
 	pausedColor     = lipgloss.Color("#FFA500")
 	restartingColor = lipgloss.Color("#FFFF00")
 	createdColor    = lipgloss.Color("#00BFFF")
 
-	// Container type colors
 	postgresColor  = lipgloss.Color("#336791")
 	minecraftColor = lipgloss.Color("#62B47A")
 	portainerColor = lipgloss.Color("#13BEF9")
 	genericColor   = lipgloss.Color("#874BFD")
 
-	// Styles
 	containerStyle = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
 			Padding(1, 2).
@@ -113,14 +132,13 @@ func (m *UiModel) View() string {
 	}
 
 	if len(m.items) == 0 {
-		return emptyStyle.Render("🐳 No containers found. Waiting for containers...")
+		renderString := centeredLogo() + "\n\n🐳 No containers found. Waiting for containers..."
+		return emptyStyle.Render(renderString)
 	}
 
-	// Get terminal dimensions (approximate, can be improved with tea.WindowSizeMsg)
 	width := 120
 	height := 30
 
-	// Calculate layout
 	numContainers := len(m.items)
 	var cols, rows int
 
@@ -137,17 +155,15 @@ func (m *UiModel) View() string {
 		cols, rows = 3, 3
 	}
 
-	// Calculate box dimensions
 	boxWidth := (width / cols) - 4
 	boxHeight := (height / rows) - 4
 
-	// Render containers in grid
 	var grid []string
 	var currentRow []string
 
 	for i, container := range m.items {
 		if i >= cols*rows {
-			break // Only show what fits
+			break
 		}
 
 		box := m.renderContainer(container, boxWidth, boxHeight)
@@ -163,18 +179,15 @@ func (m *UiModel) View() string {
 }
 
 func (m *UiModel) renderContainer(container fetcher.ContainerInfo, width, height int) string {
-	// Get container name
 	name := "unnamed"
 	if len(container.Names) > 0 {
 		name = strings.TrimPrefix(container.Names[0], "/")
 	}
 
-	// Truncate if too long
 	if len(name) > width-4 {
 		name = name[:width-7] + "..."
 	}
 
-	// Get type-specific color and icon
 	borderColor := genericColor
 	icon := "📦"
 	typeLabel := string(container.Type)
@@ -197,24 +210,20 @@ func (m *UiModel) renderContainer(container fetcher.ContainerInfo, width, height
 		typeLabel = "Container"
 	}
 
-	// Build container display
 	var content strings.Builder
 
-	// Title with icon
 	title := titleStyle.
 		Background(borderColor).
 		Width(width - 4).
 		Render(fmt.Sprintf("%s %s", icon, name))
 	content.WriteString(title + "\n\n")
 
-	// Type badge
 	typeBadge := lipgloss.NewStyle().
 		Foreground(borderColor).
 		Bold(true).
 		Render(fmt.Sprintf("● %s", typeLabel))
 	content.WriteString(typeBadge + "\n")
 
-	// Status with color
 	statusColor := stoppedColor
 	statusIcon := "⭘"
 	statusText := strings.ToUpper(container.Status)
@@ -245,27 +254,23 @@ func (m *UiModel) renderContainer(container fetcher.ContainerInfo, width, height
 		Render(fmt.Sprintf("%s %s", statusIcon, statusText))
 	content.WriteString(status + "\n\n")
 
-	// Stats (CPU and Memory)
 	content.WriteString(labelStyle.Render("CPU:    ") +
 		statsStyle.Render(fmt.Sprintf("%.1f%%", container.CPUPercent)) + "\n")
 	content.WriteString(labelStyle.Render("Memory: ") +
 		statsStyle.Render(fmt.Sprintf("%d MB", container.Mem)) + "\n\n")
 
-	// Image
 	image := container.Image
 	if len(image) > width-12 {
 		image = image[:width-15] + "..."
 	}
 	content.WriteString(labelStyle.Render("Image:  ") + valueStyle.Render(image) + "\n")
 
-	// ID (short)
 	shortID := container.ID
 	if len(shortID) > 12 {
 		shortID = shortID[:12]
 	}
 	content.WriteString(labelStyle.Render("ID:     ") + valueStyle.Render(shortID) + "\n")
 
-	// Type-specific information
 	content.WriteString("\n")
 	switch container.Type {
 	case fetcher.TypePostgreSQL:
@@ -282,7 +287,6 @@ func (m *UiModel) renderContainer(container fetcher.ContainerInfo, width, height
 		}
 	}
 
-	// Style the container box
 	styledBox := containerStyle.
 		BorderForeground(borderColor).
 		Width(width).
@@ -360,4 +364,26 @@ func (m *UiModel) renderPortainerInfo(pt *fetcher.PortainerContainerInfo, width 
 	}
 
 	return s.String()
+}
+
+// / docky-go logo
+// / generated using: https://patorjk.com/software/taag/#p=display&f=Graffiti&t=docky-go%0A&x=none&v=4&h=4&w=80&we=false
+var dockyLogo = []string{
+	"    .___             __                                   ",
+	"  __| _/____   ____ |  | _____.__.           ____   ____  ",
+	" / __ |/  _ \\_/ ___\\|  |/ <   |  |  ______  / ___\\ /  _ \\ ",
+	"/ /_/ (  <_> )  \\___|    < \\___  | /_____/ / /_/  >  <_> )",
+	"\\____ |\\____/ \\___  >__|_ \\/ ____|         \\___  / \\____/ ",
+	"     \\/           \\/     \\/\\/             /_____/          ",
+}
+
+func centeredLogo() string {
+	var lines []string
+	for _, l := range dockyLogo {
+		lines = append(lines, strings.Repeat(" ", 0)+l)
+	}
+	return lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#FDF500")).
+		Bold(true).
+		Render(strings.Join(lines, "\n"))
 }

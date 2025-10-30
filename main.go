@@ -22,7 +22,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	// quick check: ping
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 	req, _ := http.NewRequestWithContext(ctx, "GET", dockerClient.GetUrl()+"/_ping", nil)
