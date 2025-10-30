@@ -28,10 +28,13 @@ jobs:
       - name: Enforce fetcher coverage threshold (ubuntu only)
         if: matrix.os == 'ubuntu-latest'
         run: |
-          FETCHER_LINE=$(go tool cover -func=coverage.out | awk '/github.com\/wosiu6\/docky-go\/internal\/fetcher$/')
-          if [ -z "$FETCHER_LINE" ]; then echo "Fetcher line not found"; exit 2; fi
-          PCT=$(echo "$FETCHER_LINE" | awk '{print $3}' | tr -d '%')
+          go test -coverprofile=fetcher.out ./internal/fetcher
+          LINE=$(go tool cover -func=fetcher.out | grep total)
+          if [ -z "$LINE" ]; then echo "Fetcher total line not found"; exit 2; fi
+          PCT=$(echo "$LINE" | awk '{print $3}' | tr -d '%')
           awk -v pct="$PCT" 'BEGIN { if (pct+0 < 80.0) { printf "Fetcher coverage %.1f%% below threshold\n", pct; exit 1 } else { printf "Fetcher coverage %.1f%% OK\n", pct } }'
+          # Append fetcher.out coverage to overall coverage artifact
+          cat fetcher.out >> coverage.out || true
       - name: Upload coverage artifact (ubuntu only)
         if: matrix.os == 'ubuntu-latest'
         uses: actions/upload-artifact@v4
