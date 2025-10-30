@@ -20,10 +20,36 @@
 
 ## Supported Container Types (with custom details)
 
-- PostgreSQL
-- Minecraft
-- Portainer
-- ...and generic support for any Docker container
+<details>
+  <summary>List of supported containers</summary>
+    - PostgreSQL  
+    - Minecraft  
+    - Portainer  
+    - Traefik  
+    - Immich  
+    - OwnCloud  
+    - Nginx  
+    - Redis  
+    - MySQL  
+    - MongoDB  
+    - Grafana  
+    - Prometheus  
+    - Nextcloud  
+    - Minio  
+    - MariaDB  
+    - RabbitMQ  
+    - Elasticsearch  
+    - Kibana  
+    - Jenkins  
+    - WordPress  
+    - Vaultwarden  
+    - Mosquitto  
+    - Plex  
+    - Jellyfin  
+    - Home Assistant  
+    - Sonarr  
+    - Radarr
+</details>
 
 Want to add your own? Just implement a strategy and a detail renderer—no need to touch the core!
 
