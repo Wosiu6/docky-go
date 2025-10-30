@@ -94,7 +94,8 @@ Want to add your own? Just implement a strategy and a detail renderer—no need 
 
 1. **Install Go** (>=1.25)
 2. Clone this repo
-3. Run: `go run main.go`
+3. Make sure your user is a part of the docker group `sudo usermod -aG docker $USER`
+4. Run: `go run main.go`
 
 ---
 
