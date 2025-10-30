@@ -1,28 +1,44 @@
-docky-go:= cli_container_visualisation
-==========
+
+# docky-go: Modern CLI Docker Container Visualization
 
 [![License][license-shield]][license-url] [![GitHub][github-shield]][github-url]
 
-The goal of this application is to eventually display your container stats in a fancy looking cli visualisation scenario, for now it just displays your container stats in line.
+> A modular, extensible, and beautiful TUI for visualizing Docker containers and their stats, written in Go.
 
 ---
 
-## Status
-This repo is very much a work in progress and a way for me to learn Golang.
+## Features
+
+- **Live TUI Dashboard:** See all your Docker containers in a modern, responsive terminal UI.
+- **Container Stats:** View CPU, memory, and status for all containers, with special details for supported types.
+- **Extensible Architecture:** Add new container types or UI workflows by simply implementing a strategy interface—no core changes needed.
+- **Cross-Platform:** Works on Windows (Docker Desktop) and Linux (Docker socket).
+- **Fast & Efficient:** Uses Go concurrency for fast stats collection.
+- **Beautiful UI:** Built with Bubble Tea and Lip Gloss for a polished look.
 
 ---
 
-## Currently supported containers
-I currently support any container docker spits out but I have a few special cases, I will keep adding more. 
-Here is the full list:
+## Supported Container Types (with custom details)
+
 - PostgreSQL
 - Minecraft
 - Portainer
+- ...and generic support for any Docker container
+
+Want to add your own? Just implement a strategy and a detail renderer—no need to touch the core!
 
 ---
 
-## Wanna see it in action?
-Mind you, this is probably going to change a lot but here is what I have so far:
+## Architecture
+
+- **docker/**: Docker client abstraction (interface + implementation)
+- **fetcher/**: Fetches and classifies containers, uses strategy pattern for extensibility
+- **fetcher/strategies/**: One file per container type, easy to add more
+- **ui/**: Modular Bubble Tea TUI (model, view, renderers, styles, logo, helpers)
+
+---
+
+## Screenshots
 
 <details>
   <summary>Loading</summary>
@@ -36,17 +52,40 @@ Mind you, this is probably going to change a lot but here is what I have so far:
 
 ---
 
-## TODO
+## Roadmap
 
-- [ ] Refactor. Split out into files to make it more maintainable and readable.
-- [ ] Add support for more specific containers
-- [ ] Ensure connection over a socket proxy is possible.
+- [x] Modularize and deduplicate codebase
+- [x] Add unit tests for strategies and fetcher
+- [ ] Add more container-specific strategies (PRs welcome soon!)
+- [ ] Export stats to file or API
+- [ ] More advanced filtering and sorting
+
+---
+
+## Getting Started
+
+1. **Install Go** (>=1.20)
+2. Clone this repo
+3. Run: `go run main.go`
 
 ---
 
 ## Contribution
-It is unlikely I will accept any contribution right now because this is a project I want to get to a state I am happy with myself for now.
-Feel free to reach out anyway if you have any questions or suggestions!
+
+Currently, contributions are limited while the project stabilizes, but suggestions and feedback are welcome!
+
+---
+
+[paypal-shield]: https://img.shields.io/static/v1?label=PayPal&message=Donate&style=flat-square&logo=paypal&color=blue
+[paypal-url]: https://www.paypal.com/donate/?hosted_button_id=MTY5DP7G8G6T4
+
+[coffee-shield]: https://img.shields.io/static/v1?label=BuyMeCoffee&message=Donate&style=flat-square&logo=buy-me-a-coffee&color=orange
+[coffee-url]: https://www.buymeacoffee.com/wosiu6
+
+[license-shield]: https://img.shields.io/badge/license-Apache%20License%202.0-purple
+[license-url]: https://opensource.org/license/apache-2-0
+
+[github-shield]: https://img.shields.io/static/v1?label=&message=GitHub&style=flat-square&logo=github&color=grey
 
 [paypal-shield]: https://img.shields.io/static/v1?label=PayPal&message=Donate&style=flat-square&logo=paypal&color=blue
 [paypal-url]: https://www.paypal.com/donate/?hosted_button_id=MTY5DP7G8G6T4
