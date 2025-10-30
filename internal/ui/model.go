@@ -36,10 +36,10 @@ func (m *UiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "ctrl+c", "q":
 			return m, tea.Quit
-		case "right", "r":
+		case "right", "l":
 			m.nextPage()
 			return m, nil
-		case "left", "l":
+		case "left", "h":
 			m.prevPage()
 			return m, nil
 		}

@@ -16,15 +16,15 @@ var (
 
 	containerStyle = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
-			Padding(1, 2).
+			Padding(0, 1).
 			MarginRight(1).
-			MarginBottom(1)
+			MarginBottom(0)
 
 	titleStyle = lipgloss.NewStyle().
 			Bold(true).
 			Foreground(lipgloss.Color("#FAFAFA")).
 			Padding(0, 1).
-			MarginBottom(1)
+			MarginBottom(0)
 
 	labelStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#626262")).

@@ -95,7 +95,7 @@ func renderGenericFancy(container fetcher.ContainerInfo, width, height int) stri
 	typeLabel := string(container.Type)
 	name := TruncateString(baseName(container), width-4)
 	var content strings.Builder
-	content.WriteString(titleStyle.Background(borderColor).Width(width-4).Render(fmt.Sprintf("%s %s", icon, name)) + "\n\n")
+	content.WriteString(titleStyle.Background(borderColor).Width(width-4).Render(fmt.Sprintf("%s %s", icon, name)) + "\n")
 	typeBadge := lipgloss.NewStyle().Foreground(borderColor).Bold(true).Render(fmt.Sprintf("\u25cf %s", typeLabel))
 	content.WriteString(typeBadge + "\n")
 	colorHex, statusIcon, statusText := StatusInfo(container.Status)
