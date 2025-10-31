@@ -13,14 +13,6 @@ import (
 	"strconv"
 )
 
-// buildTransport attempts to discover a working Docker socket path.
-// Order:
-// 1. DOCKER_HOST=unix://...
-// 2. /var/run/docker.sock
-// 3. $XDG_RUNTIME_DIR/docker.sock
-// 4. /run/user/$UID/docker.sock
-// Returns transport that dials the first existing socket; if none exist we still
-// return a transport whose dial will produce a descriptive error.
 func buildTransport() *http.Transport {
 	host := os.Getenv("DOCKER_HOST")
 	var candidates []string
@@ -46,7 +38,6 @@ func buildTransport() *http.Transport {
 		}
 	}
 	if chosen == "" {
-		// keep first candidate (maybe DOCKER_HOST) just for error path
 		if len(candidates) > 0 {
 			chosen = candidates[0]
 		} else {
@@ -59,7 +50,6 @@ func buildTransport() *http.Transport {
 	dial := func(ctx context.Context, network, addr string) (net.Conn, error) {
 		conn, err := net.Dial("unix", chosen)
 		if err != nil {
-			// augment error for clarity
 			var e *net.OpError
 			if errors.As(err, &e) {
 				return nil, fmt.Errorf("docker socket dial failed (%s): %w", chosen, err)

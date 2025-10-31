@@ -3,16 +3,30 @@ package ui
 import "github.com/charmbracelet/lipgloss"
 
 var (
-	runningColor    = lipgloss.Color("#00FF00")
-	stoppedColor    = lipgloss.Color("#FF0000")
-	pausedColor     = lipgloss.Color("#FFA500")
-	restartingColor = lipgloss.Color("#FFFF00")
-	createdColor    = lipgloss.Color("#00BFFF")
+	colorPrimary = "#1E90FF"
+	colorSuccess = "#28A745"
+	colorWarning = "#FFC107"
+	colorDanger  = "#DC3545"
+	colorInfo    = "#17A2B8"
+	colorLight   = "#F8F9FA"
+	colorDark    = "#343A40"
 
-	postgresColor  = lipgloss.Color("#336791")
-	minecraftColor = lipgloss.Color("#62B47A")
-	portainerColor = lipgloss.Color("#13BEF9")
-	genericColor   = lipgloss.Color("#874BFD")
+	colorGeneric     = "#874BFD"
+	colorGenericDark = "#602bc9ff"
+	colorText        = "#FAFAFA"
+	colorTextDim     = "#d1d1d1ff"
+
+	colorLogo       = "#FDF500"
+	colorTraefik    = "#24A1C1"
+	colorRedis      = "#D82C20"
+	colorPostgres   = "#336791"
+	colorMySQL      = "#4479A1"
+	colorMongoDB    = "#47A248"
+	colorNginx      = "#009639"
+	colorMinio      = "#FFBD2E"
+	colorMinecraft  = "#55AA55"
+	colorGrafana    = "#F46800"
+	colorPrometheus = "#E6522C"
 
 	containerStyle = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
@@ -22,19 +36,19 @@ var (
 
 	titleStyle = lipgloss.NewStyle().
 			Bold(true).
-			Foreground(lipgloss.Color("#FAFAFA")).
+			Foreground(lipgloss.Color(colorText)).
 			Padding(0, 1).
 			MarginBottom(0)
 
 	labelStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#626262")).
+			Foreground(lipgloss.Color(colorTextDim)).
 			Bold(true)
 
 	valueStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#FAFAFA"))
+			Foreground(lipgloss.Color(colorText))
 
 	statsStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#FFA500")).
+			Foreground(lipgloss.Color(colorInfo)).
 			Bold(true)
 
 	statusStyle = lipgloss.NewStyle().
@@ -42,13 +56,13 @@ var (
 			Padding(0, 1)
 
 	errorStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#FF0000")).
+			Foreground(lipgloss.Color(colorDanger)).
 			Bold(true).
 			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("#FF0000")).
+			BorderForeground(lipgloss.Color(colorDanger)).
 			Padding(1, 2)
 
 	emptyStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#626262")).
+			Foreground(lipgloss.Color(colorDark)).
 			Italic(true)
 )

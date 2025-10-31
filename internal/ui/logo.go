@@ -19,7 +19,7 @@ func logo() string {
 	var lines []string
 	lines = append(lines, dockyLogo...)
 	return lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#FDF500")).
+		Foreground(lipgloss.Color(colorLogo)).
 		Bold(true).
 		Render(strings.Join(lines, "\n"))
 }
