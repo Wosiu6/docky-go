@@ -19,7 +19,10 @@ func (m *UiModel) View() string {
 		return emptyStyle.Render(renderString)
 	}
 
-	cols, _, _ := m.layoutSpec()
+	cols, _, perPage := m.layoutSpec()
+	if perPage < cols {
+		perPage = cols
+	}
 	width := m.termSize.Width
 	if width <= 0 {
 		width = 120
@@ -29,7 +32,18 @@ func (m *UiModel) View() string {
 	columnContents := make([][]string, cols)
 	columnHeights := make([]int, cols)
 
-	for _, container := range m.items {
+	start := m.page * perPage
+	if start >= len(m.items) {
+		start = 0
+		m.page = 0
+	}
+	end := start + perPage
+	if end > len(m.items) {
+		end = len(m.items)
+	}
+	visible := m.items[start:end]
+
+	for _, container := range visible {
 		box := m.renderContainer(container, boxWidth, 0)
 		minIdx := 0
 		minHeight := columnHeights[0]
