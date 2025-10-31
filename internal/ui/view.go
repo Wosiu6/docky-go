@@ -52,7 +52,7 @@ func (m *UiModel) View() string {
 	pages := m.totalPages()
 	footer := ""
 	if pages > 1 {
-		footer = lipgloss.NewStyle().Foreground(lipgloss.Color("#626262")).Render(fmt.Sprintf("Page %d/%d (←h/l→/q-quit)", m.page+1, pages))
+		footer = lipgloss.NewStyle().Foreground(lipgloss.Color(colorPrimary)).Render(fmt.Sprintf("Page %d/%d (←h/l→/q-quit)", m.page+1, pages))
 	}
 	content := lipgloss.JoinVertical(lipgloss.Left, append(grid, footer)...)
 	return content

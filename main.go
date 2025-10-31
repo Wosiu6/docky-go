@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"runtime"
 	"time"
@@ -20,7 +19,6 @@ func main() {
 
 	dockerClient, err := docker.NewClient()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "failed to create docker client:", err)
 		logger.Error("failed to create docker client", "error", err)
 		os.Exit(1)
 	}
@@ -29,11 +27,9 @@ func main() {
 	defer cancelPing()
 	if err := dockerClient.Ping(pingCtx); err != nil {
 		if runtime.GOOS == "windows" {
-			fmt.Fprintln(os.Stderr, "Cannot reach Docker. On Windows ensure Docker Desktop is running and named pipe \\ \\ . \\ pipe \\ docker_engine is available.")
-			logger.Error("cannot reach docker on windows", "error", err)
+			logger.Error("Cannot reach Docker. On Windows ensure Docker Desktop is running and named pipe \\ \\ . \\ pipe \\ docker_engine is available.", "error", err)
 		} else {
-			fmt.Fprintln(os.Stderr, "Cannot reach Docker. Ensure the Docker daemon is running and /var/run/docker.sock is accessible. Ensure you have permission to access the Docker socket/are a part of the docker group.")
-			logger.Error("cannot reach docker on unix", "error", err)
+			logger.Error("Cannot reach Docker. Ensure the Docker daemon is running and /var/run/docker.sock is accessible. Ensure you have permission to access the Docker socket/are a part of the docker group.", "error", err)
 		}
 		os.Exit(1)
 	}
@@ -49,7 +45,6 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	if err := orchestrator.Start(ctx); err != nil && err != context.Canceled {
-		fmt.Fprintln(os.Stderr, "application error:", err)
 		logger.Error("application error", "error", err)
 		os.Exit(1)
 	}

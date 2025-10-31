@@ -12,9 +12,9 @@ import (
 
 type DockerClient interface {
 	Ping(ctx context.Context) error
-	ListContainers(ctx context.Context) ([]map[string]interface{}, error)
-	ContainerStats(ctx context.Context, id string, dest interface{}) error
-	ContainerInspect(ctx context.Context, id string, dest interface{}) error
+	ListContainers(ctx context.Context) ([]map[string]any, error)
+	ContainerStats(ctx context.Context, id string, dest any) error
+	ContainerInspect(ctx context.Context, id string, dest any) error
 	GetHttpClient() *http.Client
 	GetUrl() string
 }
@@ -71,7 +71,7 @@ func (c *dockerClientImpl) Ping(ctx context.Context) error {
 	return nil
 }
 
-func (c *dockerClientImpl) ListContainers(ctx context.Context) ([]map[string]interface{}, error) {
+func (c *dockerClientImpl) ListContainers(ctx context.Context) ([]map[string]any, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.url+"/containers/json?all=1", nil)
 	if err != nil {
 		return nil, err
@@ -85,14 +85,14 @@ func (c *dockerClientImpl) ListContainers(ctx context.Context) ([]map[string]int
 		b, _ := io.ReadAll(resp.Body)
 		return nil, &HTTPError{Op: "list", Status: resp.StatusCode, Body: strings.TrimSpace(string(b))}
 	}
-	var out []map[string]interface{}
+	var out []map[string]any
 	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *dockerClientImpl) ContainerStats(ctx context.Context, id string, dest interface{}) error {
+func (c *dockerClientImpl) ContainerStats(ctx context.Context, id string, dest any) error {
 	url := fmt.Sprintf("%s/containers/%s/stats?stream=false", c.url, id)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
@@ -110,7 +110,7 @@ func (c *dockerClientImpl) ContainerStats(ctx context.Context, id string, dest i
 	return json.NewDecoder(resp.Body).Decode(dest)
 }
 
-func (c *dockerClientImpl) ContainerInspect(ctx context.Context, id string, dest interface{}) error {
+func (c *dockerClientImpl) ContainerInspect(ctx context.Context, id string, dest any) error {
 	url := fmt.Sprintf("%s/containers/%s/json", c.url, id)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {

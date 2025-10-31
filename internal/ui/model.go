@@ -73,10 +73,7 @@ func (m *UiModel) totalPages() int {
 	if perPage <= 0 {
 		return 1
 	}
-	pages := (len(m.items) + perPage - 1) / perPage
-	if pages < 1 {
-		pages = 1
-	}
+	pages := max((len(m.items)+perPage-1)/perPage, 1)
 	return pages
 }
 
@@ -98,10 +95,7 @@ func (m *UiModel) layoutSpec() (int, int, int) {
 	if width >= minBoxW*3+12 {
 		cols = 3
 	}
-	rows := max(height/(minBoxH+2), 1)
-	if rows > 3 {
-		rows = 3
-	}
+	rows := min(max(height/(minBoxH+2), 1), 3)
 	maxItems := cols * rows
 	return cols, rows, maxItems
 }
