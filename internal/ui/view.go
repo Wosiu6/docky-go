@@ -2,7 +2,7 @@ package ui
 
 import (
 	"fmt"
-	"sort"
+	"strings"
 
 	"github.com/charmbracelet/lipgloss"
 )
@@ -44,29 +44,57 @@ func (m *UiModel) View() string {
 	}
 
 	var columnsRendered []string
-	for i := 0; i < cols; i++ {
+	for i := range cols {
 		columnsRendered = append(columnsRendered, lipgloss.JoinVertical(lipgloss.Left, columnContents[i]...))
 	}
 
 	grid := lipgloss.JoinHorizontal(lipgloss.Top, columnsRendered...)
 
-	footer := lipgloss.NewStyle().Foreground(lipgloss.Color(colorPrimary)).Render("q-quit")
+	footer := m.renderFooter()
 	return lipgloss.JoinVertical(lipgloss.Left, grid, footer)
 }
 
-func sortByHeight(boxes []string) []string {
-	type pair struct {
-		h int
-		s string
+func (m *UiModel) renderFooter() string {
+	const sep = " │ "
+
+	quit := lipgloss.NewStyle().
+		Foreground(lipgloss.Color(colorDanger)).
+		Render("q quit")
+
+	if m.totalPages() <= 1 {
+		return lipgloss.NewStyle().
+			Width(m.termSize.Width).
+			Render(quit)
 	}
-	var arr []pair
-	for _, b := range boxes {
-		arr = append(arr, pair{h: lipgloss.Height(b), s: b})
-	}
-	sort.Slice(arr, func(i, j int) bool { return arr[i].h < arr[j].h })
-	res := make([]string, len(arr))
-	for i, p := range arr {
-		res[i] = p.s
-	}
-	return res
+
+	navStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(colorTextDim))
+
+	leftNav := navStyle.Render("h/← prev")
+	rightNav := navStyle.Render("l/→ next")
+
+	pageInfo := fmt.Sprintf(" %d / %d ", m.page+1, m.totalPages())
+	page := lipgloss.NewStyle().
+		Foreground(lipgloss.Color(colorText)).
+		Bold(true).
+		Render(pageInfo)
+
+	navBlock := lipgloss.JoinHorizontal(lipgloss.Center, leftNav, sep, page, sep, rightNav)
+
+	available := m.termSize.Width -
+		lipgloss.Width(navBlock) -
+		lipgloss.Width(quit) -
+		lipgloss.Width(sep)
+
+	middle := strings.Repeat(" ", max(0, available))
+
+	footer := lipgloss.JoinHorizontal(lipgloss.Top,
+		navBlock,
+		middle,
+		sep,
+		quit,
+	)
+
+	return lipgloss.NewStyle().
+		Width(m.termSize.Width).
+		Render(footer)
 }
