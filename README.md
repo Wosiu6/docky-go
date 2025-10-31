@@ -84,7 +84,7 @@ Want to add your own? Just implement a strategy and a detail renderer—no need 
 
 - [x] Modularise and deduplicate codebase
 - [x] Add unit tests for strategies and fetcher
-- [ ] Ensure consistent sizing or flexible display in case of inconsistent sizing
+- [x] Ensure consistent display in case of inconsistent sizing
 - [ ] Add more container-specific strategies (PRs welcome soon!)
 - [ ] Export stats to file or API
 - [ ] More advanced filtering and sorting
