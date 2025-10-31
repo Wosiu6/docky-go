@@ -78,6 +78,13 @@ Want to add your own? Just implement a strategy and a detail renderer—no need 
 
 </details>
 
+</details>
+
+<details>
+  <summary>6+ containers</summary>
+<img width="1108" height="631" alt="image" src="https://github.com/user-attachments/assets/014ed0ed-4e04-4563-819d-03cc430fc749" />
+</details>
+
 ---
 
 ## Roadmap
