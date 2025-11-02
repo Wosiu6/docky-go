@@ -18,7 +18,9 @@
 
 ---
 
-## Supported Container Types (with custom details)
+## Conteiner display types
+
+docky-go supports all Docker containers; however, it is possible to extend or change the display of a container by implementing an adapter for a specific container. List of customised containers:
 
 <details>
   <summary>List of supported containers</summary>
@@ -58,7 +60,7 @@ Want to add your own? Just implement a strategy and a detail renderer—no need 
 ## Architecture
 
 - **docker/**: Docker client abstraction (interface + implementation)
-- **fetcher/**: Fetches and classifies containers, uses strategy pattern for extensibility
+- **fetcher/**: Fetches and classifies containers, uses the strategy pattern for extensibility
 - **fetcher/strategies/**: One file per container type, easy to add more
 - **ui/**: Modular Bubble Tea TUI (model, view, renderers, styles, logo, helpers)
 
